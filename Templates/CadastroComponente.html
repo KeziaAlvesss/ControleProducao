@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Cadastro de Componentes</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<div class="container mt-5">
+  <h2 class="mb-4 text-center">Cadastro de Componentes</h2>
+
+  <!-- Formulário de Cadastro -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('cadastro_componente') }}">
+        <div class="row align-items-end">
+          <div class="col-md-9 mb-3">
+            <label for="nome" class="form-label">Nome do Componente</label>
+            <input type="text" class="form-control" id="nome" name="nome" placeholder="Digite o nome do componente" required>
+          </div>
+          <div class="col-md-3 mb-3">
+            <a href="{{ url_for('controle_producao') }}" class="btn btn-secondary mt-4 d-inline-block mb-2">Voltar ao Menu Principal</a>
+            <button type="submit" class="btn btn-success w-100">Salvar</button>
+            
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  
+
+  <!-- Mensagens Flash -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <!-- Botão Voltar -->
+  
+
+  <!-- Lista de Componentes -->
+  <div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+      Componentes Cadastrados
+    </div>
+    <div class="card-body p-0">
+      <table class="table table-bordered table-striped mb-0 align-middle text-center">
+        <thead class="table-light">
+          <tr>
+            <th style="width: 10%;">ID</th>
+            <th style="width: 35%;">Nome</th>
+            <th style="width: 15%;">Saldo Atual</th>
+            <th style="width: 15%;">Status</th>
+            <th style="width: 25%;">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for componente in todos_componentes %}
+          <tr>
+            <td>{{ componente.id }}</td>
+            <td class="text-start">{{ componente.nome }}</td>
+            <td>{{ saldos[componente.id] }}</td>
+            <td>
+              {% if componente.ativo %}
+                <a href="{{ url_for('toggle_componente', componente_id=componente.id) }}" 
+                   class="badge rounded-pill bg-success text-decoration-none px-3 py-2">
+                  Ativo
+                </a>
+              {% else %}
+                <a href="{{ url_for('toggle_componente', componente_id=componente.id) }}" 
+                   class="badge rounded-pill bg-secondary text-decoration-none px-3 py-2">
+                  Inativo
+                </a>
+              {% endif %}
+            </td>
+            <td>
+              <a href="{{ url_for('movimentacoes', componente_id=componente.id) }}" 
+                 class="btn btn-sm btn-primary mb-1">
+                Ver Movimentações
+              </a>
+              <a href="{{ url_for('ajustar_estoque', componente_id=componente.id) }}" 
+                 class="btn btn-sm btn-warning mb-1">
+                Ajuste de Estoque
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="5" class="text-center text-muted">Nenhum componente cadastrado.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

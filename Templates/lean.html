@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plataforma de Gestão da Qualidade - Lean Six Sigma</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    body {
+      background: #f9fbfd;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    .navbar {
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 25px;
+      background: #fff;
+      border-radius: 12px;
+      margin: 20px 20px 20px 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+    .header h4 {
+      font-weight: 600;
+      color: #222;
+      margin: 0;
+    }
+    .header .btn-home {
+      border: 1px solid #3b82f6;
+      color: #3b82f6;
+      background: #fff;
+      border-radius: 10px;
+      padding: 5px 12px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+    .header .btn-home:hover {
+      background: #3b82f6;
+      color: white;
+    }
+
+    .sidebar {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      height: fit-content;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      position: sticky;
+      top: 20px;
+    }
+    .sidebar h6 {
+      color: #333;
+      font-weight: 600;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 8px;
+      margin-bottom: 15px;
+    }
+    .sidebar .nav-link {
+      border-radius: 10px;
+      font-weight: 500;
+      color: #444;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 15px;
+      transition: all 0.3s ease;
+    }
+    .sidebar .nav-link.active {
+      background: #3b82f6;
+      color: #fff;
+      box-shadow: 0 4px 8px rgba(59, 130, 246, 0.2);
+    }
+    .sidebar .nav-link:hover {
+      background: #e6f0ff;
+    }
+
+    .sidebar .text-muted small {
+      display: block;
+      margin: 15px 0 10px;
+      font-size: 0.85rem;
+    }
+    .sidebar .btn-light {
+      border: 1px dashed #ccc;
+      text-align: left;
+      font-size: 0.85rem;
+      padding: 8px 12px;
+      margin-bottom: 8px;
+    }
+
+    .content-box {
+      background: #fff;
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      margin-bottom: 30px;
+    }
+    .content-box h5 {
+      color: #222;
+      border-bottom: 2px solid #f0f0f0;
+      padding-bottom: 10px;
+      margin-bottom: 15px;
+    }
+    .form-control {
+      border-radius: 8px;
+      border: 1px solid #ddd;
+    }
+    .btn-primary {
+      background: #3b82f6;
+      border: none;
+      border-radius: 8px;
+      font-weight: 500;
+      padding: 8px 20px;
+    }
+    .btn-outline-secondary {
+      border-radius: 8px;
+      border-color: #6c757d;
+      color: #6c757d;
+      padding: 8px 20px;
+    }
+
+    .metric-container {
+      text-align: center;
+      padding: 15px;
+      border-radius: 10px;
+      background: white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 10px;
+      color: #333;
+    }
+    .metric-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #003580;
+    }
+    .metric-label {
+      font-size: 14px;
+      color: #666;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 400px;
+      margin: 20px 0;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        position: static;
+        margin-bottom: 20px;
+      }
+      .header {
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+      }
+    }
+
+    table {
+      font-size: 0.9rem;
+    }
+    table thead th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+    }
+    table tbody tr:nth-child(even) {
+      background-color: #fafafa;
+    }
+
+    .upload-container {
+      background: #f0f7ff;
+      border: 2px dashed #3b82f6;
+      border-radius: 12px;
+      padding: 30px;
+      text-align: center;
+      margin: 20px 20px 30px 20px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .upload-container:hover {
+      background: #e6f0ff;
+      border-color: #1e6cd6;
+    }
+    .upload-btn {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-weight: 500;
+      margin-top: 10px;
+    }
+    .upload-btn:hover {
+      background: #1e6cd6;
+    }
+    .upload-info {
+      color: #666;
+      margin-top: 10px;
+      font-size: 0.9rem;
+    }
+    .file-name {
+      font-weight: 600;
+      color: #003580;
+      margin-top: 8px;
+    }
+
+    #main-content {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #003580;">
+    <div class="container-fluid">
+      <a class="navbar-brand d-flex align-items-center" href="#">
+        Plataforma de Gestão da Qualidade
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link active" href="{{ url_for('index')}}">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{url_for('laudo_tecnico')}}">Laudo Técnico</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{url_for('controle_producao')}}">Controle de Produção</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{url_for('lean_six_sigma')}}">Lean Six Sigma</a></li>
+          <li class="nav-item"><a class="nav-link" href= "{{url_for('analise_preditiva')}}">Análise Preditiva</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{url_for('dashboard')}}">Dashboard</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="header">
+    <h4><i class="bi bi-gear-fill text-primary"></i> Lean Six Sigma - Análise Estatística & DMAIC</h4>
+    <a href="{{ url_for('index')}}" class="btn btn-home"><i class="bi bi-house"></i> Página Inicial</a>
+  </div>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <div class="col-12">
+        <div class="upload-container" id="upload-area">
+          <i class="bi bi-file-earmark-spreadsheet" style="font-size: 48px; color: #3b82f6;"></i>
+          <h5 class="mt-3">Carregue sua planilha de assistência técnica</h5>
+          <p class="upload-info">Arquivo suportado: .xlsx (Excel)</p>
+          <input type="file" id="file-input" accept=".xlsx" style="display: none;">
+          <button class="upload-btn" id="upload-btn">Selecionar Arquivo</button>
+          <div class="file-name" id="file-name">Nenhum arquivo selecionado</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container-fluid mt-4" id="main-content">
+    <div class="row">
+
+      <div class="col-lg-3 col-md-4">
+        <div class="sidebar">
+          <h6>Fases do DMAIC</h6>
+          <div class="nav flex-column nav-pills">
+            <a class="nav-link active" href="#definir">🔍 Definir</a>
+            <a class="nav-link" href="#medir">📏 Medir</a>
+            <a class="nav-link" href="#analisar">🧠 Analisar</a>
+            <a class="nav-link" href="#implementar">🚀 Melhorar</a>
+            <a class="nav-link" href="#controlar">📉 Controlar</a>
+          </div>
+          <hr>
+          <p class="text-muted small"><i class="bi bi-info-circle"></i> Informações Técnicas</p>
+          <button class="btn btn-light w-100 mb-2" onclick="alert('Guia DMAIC: ISO 13053 | ASQ')">Guia DMAIC</button>
+          <button class="btn btn-light w-100" id="export-btn">Exportar Relatório DMAIC</button>
+        </div>
+      </div>
+
+      <div class="col-lg-9 col-md-8">
+        
+        <div id="definir" class="content-box">
+          <h5 class="fw-bold">1. Definir o Problema</h5>
+          <p class="text-muted">Identifique o problema crítico com base em impacto financeiro e frequência.</p>
+
+          <div class="row mb-4">
+            <div class="col-md-3">
+              <div class="metric-container">
+                <div class="metric-value" id="total-atendimentos">Carregando...</div>
+                <div class="metric-label">Total de Atendimentos</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="metric-container">
+                <div class="metric-value" id="valor-total">Carregando...</div>
+                <div class="metric-label">Valor Total de Custos</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="metric-container">
+                <div class="metric-value" id="ticket-medio">Carregando...</div>
+                <div class="metric-label">Ticket Médio</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="metric-container">
+                <div class="metric-value" id="produtos-unicos">Carregando...</div>
+                <div class="metric-label">Produtos Únicos</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-4 p-3 bg-light rounded">
+            <strong id="problema-prioritario">Carregando problema prioritário...</strong>
+          </div>
+
+          <textarea class="form-control" rows="4" placeholder="Descreva o problema aqui..." id="problema-textarea"></textarea>
+          
+          <div class="mt-4">
+            <h6>Top 5 Combinações Produto × Defeito (por Custo)</h6>
+            <table class="table table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Produto</th>
+                  <th>Motivo</th>
+                  <th>Quantidade</th>
+                  <th>Custo Total</th>
+                  <th>Taxa de Ocorrência</th>
+                </tr>
+              </thead>
+              <tbody id="top5-tbody">
+                <tr><td colspan="5">Carregando dados...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="medir" class="content-box" style="display: none;">
+          <h5 class="fw-bold">2. Medir o Problema</h5>
+          <p class="text-muted">Quantifique frequência, custo e evolução do defeito prioritário.</p>
+
+          <div class="row mb-4">
+            <div class="col-md-3">
+              <div class="metric-container">
+                <div class="metric-value" id="total-defeitos">Carregando...</div>
+                <div class="metric-label">Total de Defeitos</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="metric-container">
+                <div class="metric-value" id="custo-prioritario">Carregando...</div>
+                <div class="metric-label">Custo do Defeito Prioritário</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="metric-container">
+                <div class="metric-value" id="taxa-defeito">Carregando...</div>
+                <div class="metric-label">Taxa de Ocorrência</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="metric-container">
+                <div class="metric-value" id="ticket-prioritario">Carregando...</div>
+                <div class="metric-label">Ticket Médio do Defeito</div>
+              </div>
+            </div>
+          </div>
+
+          <h6>Evolução Diária de Defeito Prioritário (Custo)</h6>
+          <div class="chart-container">
+            <canvas id="measure-chart"></canvas>
+          </div>
+
+          <div class="mt-4">
+            <h6>Gráfico de Distribuição de Motivos (Custo)</h6>
+            <div class="chart-container">
+              <canvas id="pie-chart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div id="analisar" class="content-box" style="display: none;">
+          <h5 class="fw-bold">3. Analisar Causa Raiz</h5>
+          <p class="text-muted">Identifique as causas principais com o diagrama de Pareto e Ishikawa.</p>
+
+          <h6>Diagrama de Pareto: 80% dos custos vêm de 20% das causas</h6>
+          <div class="chart-container">
+            <canvas id="pareto-chart"></canvas>
+          </div>
+
+          <h6 class="mt-5">🐟 Ishikawa Interativo: Cadastre as Causas-Raiz</h6>
+          <div class="mb-4">
+            <form id="form-causa">
+              <div class="row">
+                <div class="col-md-5">
+                  <select class="form-select" required>
+                    <option value="">Selecione a Categoria</option>
+                    <option>Mão de Obra</option>
+                    <option>Método</option>
+                    <option>Material</option>
+                    <option>Máquina</option>
+                    <option>Meio Ambiente</option>
+                    <option>Medição</option>
+                  </select>
+                </div>
+                <div class="col-md-5">
+                  <input type="text" class="form-control" placeholder="Descrição da causa..." required>
+                </div>
+                <div class="col-md-2">
+                  <button type="submit" class="btn btn-primary w-100">Adicionar</button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <div id="causas-list" class="mb-4">
+            <table class="table table-bordered table-sm">
+              <thead><tr><th>Categoria</th><th>Causa</th></tr></thead>
+              <tbody>
+                <tr><td>Método</td><td>Processo de montagem não padronizado</td></tr>
+                <tr><td>Material</td><td>Qualidade inferior da espuma fornecida</td></tr>
+                <tr><td>Mão de Obra</td><td>Técnicos não treinados para inspeção final</td></tr>
+                <tr><td>Medição</td><td>Falta de checklist de qualidade</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="implementar" class="content-box" style="display: none;">
+          <h5 class="fw-bold">4. Melhorar</h5>
+          <p class="text-muted">Propor ações corretivas e preventivas.</p>
+
+          <h6>✅ Exemplo de Possíveis Ações Sugeridas</h6>
+          <ol class="mb-4">
+            <li>Padronizar processo de montagem do produto prioritário</li>
+            <li>Treinar equipe técnica sobre o defeito crítico</li>
+            <li>Inspecionar rigorosamente matéria-prima (espuma)</li>
+            <li>Criar checklist de qualidade com foto-referência</li>
+          </ol>
+
+          <h6>💡 Suas Ações</h6>
+          <textarea class="form-control" rows="4" placeholder="Adicione suas ações aqui..."></textarea>
+
+          <button class="btn btn-primary mt-3">Implementar Melhorias</button>
+        </div>
+
+        <div id="controlar" class="content-box" style="display: none;">
+          <h5 class="fw-bold">5. Controlar</h5>
+          <p class="text-muted">Monitore os resultados após a implementação.</p>
+
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <label for="meta">Meta de Redução de Custo (%)</label>
+              <input type="range" class="form-range" id="meta" min="10" max="80" value="50">
+              <small>Meta: <span id="meta-value">50%</span></small>
+            </div>
+            <div class="col-md-6">
+              <label for="reducao">Redução Alcançada (%)</label>
+              <input type="range" class="form-range" id="reducao" min="0" max="100" value="25">
+              <small>Progresso: <span id="reducao-value">25%</span></small>
+            </div>
+          </div>
+
+          <div class="progress mb-4" style="height: 25px;">
+            <div class="progress-bar bg-success" role="progressbar" style="width: 25%">25%</div>
+          </div>
+
+          <div class="alert alert-warning" id="status-alert">
+            ⚠️ Meta ainda não atingida. Continue monitorando.
+          </div>
+
+          <h6>Indicadores de Controle</h6>
+          <table class="table table-bordered table-sm">
+            <thead>
+              <tr>
+                <th>Indicador</th>
+                <th>Atual</th>
+                <th>Meta</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="controle-tbody">
+              <tr><td colspan="4">Carregando dados...</td></tr>
+            </tbody>
+          </table>
+
+          <button class="btn btn-outline-secondary" id="download-report">📥 Baixar Relatório em CSV</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const primaryColor = "#003399";
+    let df = [];
+
+    function parseBrazilianCurrency(str) {
+      if (!str || str === '' || str === null) return 0;
+      if (typeof str === 'number') return parseFloat(str.toFixed(2));
+
+      let cleaned = String(str).trim();
+      if (cleaned.includes(',')) {
+        cleaned = cleaned.replace(/\./g, '');
+        cleaned = cleaned.replace(',', '.');
+      } else {
+        const parts = cleaned.split('.');
+        if (parts.length > 1) {
+          const lastPart = parts[parts.length - 1];
+          if (lastPart.length === 2) {
+            cleaned = parts.slice(0, -1).join('') + '.' + lastPart;
+          } else {
+            cleaned = cleaned.replace(/\./g, '');
+          }
+        }
+      }
+      const num = parseFloat(cleaned);
+      return isNaN(num) ? 0 : parseFloat(num.toFixed(2));
+    }
+
+    document.getElementById('upload-btn').addEventListener('click', () => {
+      document.getElementById('file-input').click();
+    });
+
+    document.getElementById('file-input').addEventListener('change', handleFileSelect);
+
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      document.getElementById('file-name').textContent = file.name;
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+
+        console.log("Abas disponíveis:", workbook.SheetNames);
+        const worksheetName = "new sheet";
+        const worksheet = workbook.Sheets[worksheetName];
+
+        if (!worksheet) {
+          alert(`❌ A aba "${worksheetName}" não foi encontrada. Verifique o nome da aba no Excel.`);
+          return;
+        }
+
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+          header: 1,
+          raw: false,
+          defval: ''
+        });
+
+        const headers = jsonData[0].map(h => h ? String(h).trim().toUpperCase() : '');
+        console.log('✅ Colunas detectadas:', headers);
+        console.log('📊 Primeiras 3 linhas:', jsonData.slice(0, 3));
+
+        const findColumn = (possibleNames) => {
+          for (const name of possibleNames) {
+            const index = headers.findIndex(h => 
+              h.includes(name.toUpperCase()) || name.toUpperCase().includes(h)
+            );
+            if (index !== -1) return index;
+          }
+          return -1;
+        };
+
+        const mapping = {
+          CODIGO: findColumn(['MODELO', 'COD', 'CÓDIGO', 'SKU']),
+          PRODUTO: findColumn(['PRODUTO']),
+          'Motivo Constatado': findColumn(['MOTIVO', 'MOTIVO CONSTATADO', 'DEFEITO']),
+          'Data Chamada': findColumn(['DATA CHAMADA', 'DATA', 'DT CHAMADA']),
+          GRUPO: findColumn(['GRUPO', 'REGIÃO', 'REGIAO']),
+          VALOR_UNITARIO: findColumn(['VALOR_UNITARIO', 'VALOR UNITARIO', 'VLR_UNIT']),
+          TOTAL: findColumn(['TOTAL', 'VALOR_TOTAL', 'VLR_TOTAL'])
+        };
+        // Verificação e correção manual
+       if (mapping.PRODUTO === 5) { // Se estiver apontando para "Cod Produto" (coluna F)
+       console.warn('⚠️ Corrigindo mapeamento: FORÇANDO coluna PRODUTO para índice 6 (coluna G)');
+       mapping.PRODUTO = 6;
+      }
+
+        console.log('📋 Mapeamento de colunas:', mapping);
+        console.log('📦 Índice da coluna PRODUTO:', mapping.PRODUTO);
+        console.log('🔢 Índice da coluna CODIGO:', mapping.CODIGO);
+        console.log('📌 Coluna PRODUTO encontrada no índice:', mapping.PRODUTO);
+        console.log('📌 Primeiros 3 valores da coluna PRODUTO:', jsonData.slice(1, 4).map(r => r[mapping.PRODUTO]));
+
+        const requiredFields = ['PRODUTO', 'Motivo Constatado', 'Data Chamada', 'GRUPO', 'TOTAL'];
+        const missingFields = [];
+        for (const field of requiredFields) {
+          if (mapping[field] === -1) {
+            missingFields.push(field);
+          }
+        }
+
+        if (missingFields.length > 0) {
+          console.error(`❌ Campos não encontrados:`, missingFields);
+          alert(`Erro: Os seguintes campos não foram encontrados:\n${missingFields.join(', ')}\n\nColunas disponíveis: ${headers.join(', ')}`);
+          return;
+        }
+
+        df = [];
+        for (let i = 1; i < jsonData.length; i++) {
+          const row = jsonData[i];
+          if (!row || row.length === 0) continue;
+
+          const hasData = row.some(cell => cell !== null && cell !== undefined && String(cell).trim() !== '');
+          if (!hasData) continue;
+
+          const obj = {};
+
+          // Pegar o NOME do produto (coluna PRODUTO), não o código
+          obj['PRODUTO'] = (mapping.PRODUTO !== -1 && row[mapping.PRODUTO]) 
+            ? String(row[mapping.PRODUTO]).trim() 
+            : 'Desconhecido';
+          
+          // Guardar também o código, se existir
+          if (mapping.CODIGO !== -1 && row[mapping.CODIGO]) {
+            obj['CODIGO'] = String(row[mapping.CODIGO]).trim();
+          }
+            
+          obj['Motivo Constatado'] = (mapping['Motivo Constatado'] !== -1 && row[mapping['Motivo Constatado']]) 
+            ? String(row[mapping['Motivo Constatado']]).trim() 
+            : 'Desconhecido';
+            
+          obj['Data Chamada'] = (mapping['Data Chamada'] !== -1 && row[mapping['Data Chamada']]) 
+            ? String(row[mapping['Data Chamada']]).trim() 
+            : new Date().toISOString().split('T')[0];
+            
+          obj['GRUPO'] = (mapping.GRUPO !== -1 && row[mapping.GRUPO]) 
+            ? String(row[mapping.GRUPO]).trim() 
+            : 'Não disponível';
+            
+          if (mapping.VALOR_UNITARIO !== -1 && row[mapping.VALOR_UNITARIO] !== undefined && row[mapping.VALOR_UNITARIO] !== null && row[mapping.VALOR_UNITARIO] !== '') {
+            obj['VALOR_UNITARIO'] = parseBrazilianCurrency(row[mapping.VALOR_UNITARIO]);
+          } else {
+            obj['VALOR_UNITARIO'] = 0;
+          }
+          
+          if (mapping.TOTAL !== -1 && row[mapping.TOTAL] !== undefined && row[mapping.TOTAL] !== null && row[mapping.TOTAL] !== '') {
+            obj['TOTAL'] = parseBrazilianCurrency(row[mapping.TOTAL]);
+          } else {
+            obj['TOTAL'] = 0;
+          }
+
+          if (obj['PRODUTO'] !== 'Desconhecido' || obj['Motivo Constatado'] !== 'Desconhecido') {
+            df.push(obj);
+          }
+        }
+
+        console.log('✅ Dados carregados:', df.length, 'registros');
+        console.log('📊 Exemplo de registro:', df[0]);
+        console.log('💰 Exemplo de TOTAL:', df[0]?.TOTAL);
+
+        initializeDashboard();
+      };
+
+      reader.readAsArrayBuffer(file);
+    }
+
+    function initializeDashboard() {
+      if (df.length === 0) return;
+
+      const groupedByProductDefect = df.reduce((acc, row) => {
+        const produto = row['PRODUTO'] || 'Desconhecido';
+        const motivo = row['Motivo Constatado'] || 'Desconhecido';
+        const key = `${produto} | ${motivo}`;
+        const custo = row['TOTAL'] || 0;
+        if (!acc[key]) acc[key] = { count: 0, custo: 0 };
+        acc[key].count++;
+        acc[key].custo += custo;
+        return acc;
+      }, {});
+
+      const custoPorProduto = df.reduce((acc, row) => {
+        const produto = row['PRODUTO'] || 'Desconhecido';
+        const custo = row['TOTAL'] || 0;
+        acc[produto] = (acc[produto] || 0) + custo;
+        return acc;
+      }, {});
+
+      const qtdPorProduto = df.reduce((acc, row) => {
+        const produto = row['PRODUTO'] || 'Desconhecido';
+        acc[produto] = (acc[produto] || 0) + 1;
+        return acc;
+      }, {});
+
+      const problemas = Object.entries(groupedByProductDefect).map(([key, data]) => {
+        const [produto, motivo] = key.split(' | ');
+        const taxaDefeito = (data.count / qtdPorProduto[produto]) * 100;
+        return { 
+          produto, 
+          motivo, 
+          count: data.count, 
+          custo: data.custo, 
+          taxaDefeito: taxaDefeito.toFixed(1),
+          ticketMedio: (data.custo / data.count).toFixed(2)
+        };
+      }).sort((a, b) => b.custo - a.custo);
+
+      const topProblem = problemas[0];
+      const produtoPrioritario = topProblem.produto;
+      const motivoPrioritario = topProblem.motivo;
+      const frequency = topProblem.count;
+      const custoTotalProblema = topProblem.custo;
+      const taxaDefeitoGlobal = topProblem.taxaDefeito;
+      const ticketMedioProblema = topProblem.ticketMedio;
+
+      const regionCounts = df
+        .filter(row => row['PRODUTO'] === produtoPrioritario && row['Motivo Constatado'] === motivoPrioritario)
+        .reduce((acc, row) => {
+          const grupo = row['GRUPO'] || 'Não disponível';
+          acc[grupo] = (acc[grupo] || 0) + 1;
+          return acc;
+        }, {});
+      const grupoPrioritario = Object.entries(regionCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'Não disponível';
+
+      document.getElementById('problema-prioritario').innerHTML = `
+        O defeito mais crítico é <strong>"${motivoPrioritario}"</strong> no produto <strong>"${produtoPrioritario}"</strong>, 
+        com <strong>${frequency} ocorrências</strong> e <strong>R$ ${custoTotalProblema.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong> em custos,
+        principalmente na região <strong>"${grupoPrioritario}"</strong>.<br>
+        <small>Taxa de ocorrência: ${taxaDefeitoGlobal}% | Ticket médio: R$ ${ticketMedioProblema}</small>
+      `;
+      document.getElementById('problema-textarea').value = `Reduzir o custo do defeito "${motivoPrioritario}" no produto "${produtoPrioritario}" na região ${grupoPrioritario}, atualmente em R$ ${custoTotalProblema.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+
+      const totalAtendimentos = df.length;
+      const valorTotal = df.reduce((sum, row) => sum + (row['TOTAL'] || 0), 0);
+      const ticketMedio = (valorTotal / totalAtendimentos).toFixed(2);
+      const produtosUnicos = new Set(df.map(row => row['PRODUTO'])).size;
+
+      document.getElementById('total-atendimentos').textContent = totalAtendimentos;
+      document.getElementById('valor-total').textContent = `R$ ${valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+      document.getElementById('ticket-medio').textContent = `R$ ${ticketMedio}`;
+      document.getElementById('produtos-unicos').textContent = produtosUnicos;
+
+      const top5 = problemas.slice(0, 5);
+      const tbody = document.getElementById('top5-tbody');
+      tbody.innerHTML = '';
+      top5.forEach(item => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${item.produto}</td>
+            <td>${item.motivo}</td>
+            <td>${item.count}</td>
+            <td>R$ ${item.custo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+            <td>${item.taxaDefeito}%</td>
+          </tr>
+        `;
+      });
+
+      const dailyCost = df
+        .filter(row => row['Data Chamada'] && row['Motivo Constatado'] === motivoPrioritario)
+        .map(row => {
+          const dateStr = row['Data Chamada'];
+          const [datePart, timePart] = dateStr.split(' ');
+          const [day, month, year] = datePart.split('/');
+          const isoDate = `${year}-${month}-${day}`;
+          return { date: isoDate, custo: row['TOTAL'] || 0 };
+        })
+        .reduce((acc, row) => {
+          acc[row.date] = (acc[row.date] || 0) + row.custo;
+          return acc;
+        }, {});
+
+      const dailyLabels = Object.keys(dailyCost).sort();
+      const dailyValues = dailyLabels.map(date => dailyCost[date]);
+
+      if (window.measureChart) window.measureChart.destroy();
+      const measureCtx = document.getElementById('measure-chart').getContext('2d');
+      window.measureChart = new Chart(measureCtx, {
+        type: 'line',
+        data: {
+          labels: dailyLabels.map(d => d.slice(5)),
+          datasets: [{
+            label: `${motivoPrioritario} - Custo Diário`,
+            data: dailyValues,
+            borderColor: primaryColor,
+            tension: 0.3,
+            fill: false,
+            pointRadius: 5
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { title: { display: true, text: `Evolução Diária de Custo do Defeito "${motivoPrioritario}"` } },
+          scales: { y: { beginAtZero: true, ticks: { callback: val => `R$ ${val.toLocaleString('pt-BR')}` } } }
+        }
+      });
+
+      const motivoCusto = df.reduce((acc, row) => {
+        const motivo = row['Motivo Constatado'] || 'Desconhecido';
+        const custo = row['TOTAL'] || 0;
+        acc[motivo] = (acc[motivo] || 0) + custo;
+        return acc;
+      }, {});
+
+      const motivosLabels = Object.keys(motivoCusto).slice(0, 5);
+      const motivosValues = motivosLabels.map(m => motivoCusto[m]);
+
+      if (window.pieChart) window.pieChart.destroy();
+      const pieCtx = document.getElementById('pie-chart').getContext('2d');
+      window.pieChart = new Chart(pieCtx, {
+        type: 'doughnut',
+        data: {
+          labels: motivosLabels,
+          datasets: [{
+            data: motivosValues,
+            backgroundColor: ['#003399', '#0052b3', '#0078d4', '#00a6ed', '#80cfff']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'right' },
+            tooltip: { callbacks: { label: (ctx) => `${ctx.label}: R$ ${ctx.raw.toLocaleString('pt-BR')}` } }
+          }
+        }
+      });
+
+      const totalDefeitos = df.length;
+      const defeitosPrioritarios = df.filter(row => row['Motivo Constatado'] === motivoPrioritario).length;
+      const taxaDefeito = ((defeitosPrioritarios / totalDefeitos) * 100).toFixed(1);
+
+      document.getElementById('total-defeitos').textContent = totalDefeitos;
+      document.getElementById('custo-prioritario').textContent = `R$ ${custoTotalProblema.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+      document.getElementById('taxa-defeito').textContent = `${taxaDefeito}%`;
+      document.getElementById('ticket-prioritario').textContent = `R$ ${ticketMedioProblema}`;
+
+      const sortedMotivos = Object.entries(motivoCusto).sort((a, b) => b[1] - a[1]);
+      const paretoLabels = sortedMotivos.map(([motivo]) => motivo);
+      const paretoValues = sortedMotivos.map(([, custo]) => custo);
+
+      let acumulado = 0;
+      const acumuladoPercent = paretoValues.map(custo => {
+        acumulado += custo;
+        return (acumulado / valorTotal) * 100;
+      });
+
+      if (window.paretoChart) window.paretoChart.destroy();
+      const paretoCtx = document.getElementById('pareto-chart').getContext('2d');
+      window.paretoChart = new Chart(paretoCtx, {
+        type: 'bar',
+        data: {
+          labels: paretoLabels.slice(0, 10),
+          datasets: [
+            {
+              type: 'bar',
+              label: 'Custo Total',
+              data: paretoValues.slice(0, 10),
+              backgroundColor: primaryColor
+            },
+            {
+              type: 'line',
+              label: 'Acumulado %',
+              data: acumuladoPercent.slice(0, 10),
+              borderColor: 'red',
+              tension: 0,
+              yAxisID: 'y1',
+              pointRadius: 4
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { title: { display: true, text: 'Pareto: 80% dos custos vêm de 20% das causas' } },
+          scales: {
+            y: { 
+              beginAtZero: true, 
+              title: { display: true, text: 'Custo Total (R$)' },
+              ticks: { callback: val => `R$ ${val.toLocaleString('pt-BR')}` }
+            },
+            y1: {
+              beginAtZero: true,
+              position: 'right',
+              title: { display: true, text: 'Acumulado %' },
+              grid: { drawOnChartArea: false },
+              ticks: { callback: (val) => val.toFixed(1) + '%' }
+            }
+          }
+        }
+      });
+
+      const tbodyControl = document.getElementById('controle-tbody');
+      tbodyControl.innerHTML = `
+        <tr><td>Custo do defeito prioritário</td><td>R$ ${custoTotalProblema.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td><td>R$ ${Math.round(custoTotalProblema * 0.5).toLocaleString('pt-BR')}</td><td><span class="badge bg-warning">Em Monitoramento</span></td></tr>
+        <tr><td>Ticket Médio Geral</td><td>R$ ${parseFloat(ticketMedio).toLocaleString('pt-BR')}</td><td>R$ ${(parseFloat(ticketMedio) * 0.85).toFixed(2)}</td><td><span class="badge bg-danger">Fora do Padrão</span></td></tr>
+        <tr><td>Índice de Retrabalho</td><td>${(defeitosPrioritarios / totalDefeitos * 100).toFixed(1)}%</td><td>≤5%</td><td><span class="badge bg-danger">Fora do Padrão</span></td></tr>
+      `;
+
+      document.getElementById('definir').style.display = 'block';
+      document.getElementById('main-content').style.display = 'block';
+      document.querySelector('.upload-container').style.display = 'none';
+    }
+
+    document.querySelectorAll('.nav-link').forEach(link => {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        this.classList.add('active');
+
+        const phase = this.getAttribute('href');
+        document.querySelectorAll('.content-box').forEach(box => {
+          box.style.display = 'none';
+        });
+        document.querySelector(phase).style.display = 'block';
+      });
+    });
+
+    document.getElementById('meta').addEventListener('input', e => {
+      document.getElementById('meta-value').textContent = e.target.value + '%';
+    });
+    
+    document.getElementById('reducao').addEventListener('input', e => {
+      const val = e.target.value;
+      document.getElementById('reducao-value').textContent = val + '%';
+      document.querySelector('#status-alert').innerText = val >= 50 ? '✅ Meta atingida! Custo reduzido.' : '⚠️ Continue monitorando. Ainda não atingiu a meta.';
+      document.querySelector('.progress-bar').style.width = val + '%';
+      document.querySelector('.progress-bar').textContent = val + '%';
+    });
+
+    document.getElementById('form-causa').addEventListener('submit', e => {
+      e.preventDefault();
+      const categoria = e.target.querySelector('select').value;
+      const causa = e.target.querySelector('input[type=text]').value;
+      if (!categoria || !causa) return;
+
+      const tbody = document.getElementById('causas-list').querySelector('tbody');
+      const row = `<tr><td>${categoria}</td><td>${causa}</td></tr>`;
+      tbody.insertAdjacentHTML('beforeend', row);
+
+      e.target.reset();
+      alert('Causa adicionada!');
+    });
+
+    document.getElementById('export-btn').addEventListener('click', () => {
+      alert('Relatório DMAIC exportado em PDF (funcionalidade completa requer backend)');
+    });
+
+    document.getElementById('download-report').addEventListener('click', () => {
+      const csvContent = "data:text/csv;charset=utf-8," +
+        "Indicador,Atual,Meta,Status\n" +
+        "Custo do defeito prioritário,R$ 12500.00,R$ 6250.00,Em Monitoramento\n" +
+        "Ticket Médio Geral,R$ 89.50,R$ 76.00,Fora do Padrão\n" +
+        "Índice de Retrabalho,8.1%,5%,Fora do Padrão";
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "relatorio_dmaic.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+  </script>
+
+</body>
+</html>
