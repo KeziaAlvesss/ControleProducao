@@ -499,6 +499,30 @@ def routes(app):
                 for c in componentes
             ]
         }
+    
+    @app.route('/tipo-espuma/<int:id>/editar', methods=['POST'], endpoint='editar_tipo_espuma')
+    def editar_tipo_espuma(id):
+        nova_nome = request.form.get('novo_nome', '').strip()
+
+        if not nova_nome:
+            flash("Informe o novo nome da espuma!", "danger")
+            espumas = TipoEspuma.query.order_by(TipoEspuma.nome).all()
+            return render_template('cadastroTipoEspuma.html', espumas=espumas)
+
+        # Verifica duplicidade
+        if TipoEspuma.query.filter(TipoEspuma.nome == nova_nome, TipoEspuma.id != id).first():
+            flash("Já existe um tipo de espuma com esse nome!", "warning")
+            espumas = TipoEspuma.query.order_by(TipoEspuma.nome).all()
+            return render_template('cadastroTipoEspuma.html', espumas=espumas)
+
+        espuma = TipoEspuma.query.get_or_404(id)
+        espuma.nome = nova_nome
+        db.session.commit()
+        flash(f"Tipo de espuma atualizado para '{nova_nome}' com sucesso!", "success")
+
+        espumas = TipoEspuma.query.order_by(TipoEspuma.nome).all()
+        return render_template('cadastroTipoEspuma.html', espumas=espumas)
+
 
 
 
@@ -536,3 +560,7 @@ def routes(app):
     @app.route('/relatorios')
     def relatorios():
         return render_template('relatorios.html')
+    
+
+
+
