@@ -20,11 +20,4 @@ Criar uma interface simples e funcional para:
 
 ## 📂 Estrutura do Projeto
 
-```bash
-meu_tcc/
-├── index.html            # Página principal do sistema
-├── style.css             # Estilos customizados
-├── script.js             # Lógica JavaScript (se aplicável)
-├── imagens/              # Logos e ícones
-├── laudos/               # Modelos de laudos ou arquivos PDF
-└── README.md             # Este arquivo
+
