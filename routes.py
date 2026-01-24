@@ -3,6 +3,8 @@ from models import *
 from datetime import date, datetime
 from sqlalchemy import func, case,distinct
 from flask import jsonify
+from flask_login import login_user, logout_user, login_required, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
 
 ##from models import Componente, Estoque, Movimentacao, Producao, ComponenteProducao
 
@@ -24,7 +26,7 @@ def routes(app):
     # Inicializa componentes pré-cadastrados (uma única vez)
     # -----------------------
     def inicializar_componentes():
-        componentes_iniciais = ["COMPO A", "COMPO B", "COMPO C"]
+        componentes_iniciais = ["COMPONENTE"]
         for nome in componentes_iniciais:
             if not Componente.query.filter_by(nome=nome).first():
                 novo = Componente(nome=nome, ativo=True)
@@ -68,6 +70,7 @@ def routes(app):
     # Rota inicial
     # -----------------------
     @app.route('/')
+    @login_required
     def index():
         return render_template('index-main.html')
 
@@ -189,6 +192,7 @@ def routes(app):
     # Controle de Produção
     # -----------------------
     @app.route('/controle-producao')
+    @login_required
     def controle_producao():
         ##producoes = Producao.query.all()
         producoes = Producao.query.order_by(Producao.id.desc()).all()
@@ -280,7 +284,8 @@ def routes(app):
                 cor=cor,
                 altura=altura,
                 conformidade=conformidade,
-                observacoes=observacoes
+                observacoes=observacoes,
+                usuario_id=current_user.id
             )
             db.session.add(nova_producao)
             db.session.flush()  # Pega o ID antes do commit
@@ -389,93 +394,112 @@ def routes(app):
             tipos_espuma=tipo_espuma
         ))
 
-        # POST → processa o cadastro e volta para a mesma página
-    @app.route('/ficha-tecnica', methods=['POST', 'GET'], endpoint='cadastrar_ficha_tecnica')
+    # POST → processa o cadastro e volta para a mesma página
+    @app.route('/ficha-tecnica', methods=['GET', 'POST'], endpoint='cadastrar_ficha_tecnica')
     def cadastrar_ficha_tecnica():
-        componentes = Componente.query.filter_by(ativo=True).all()
-        tipos_espuma = TipoEspuma.query.all()  # 🔹 Busca os tipos de espuma do banco
+            componentes = Componente.query.filter_by(ativo=True).all()
+            tipos_espuma = TipoEspuma.query.all()
 
-        if request.method == 'POST':
-            tipo_espuma = request.form.get('tipo_espuma')
-            descricao = request.form.get('descricao', '')
+            # ---------------------
+            #       POST
+            # ---------------------
+            if request.method == 'POST':
+                print(request.form)
+                tipo_espuma_id = request.form.get('tipo_espuma')
+                descricao = request.form.get('descricao', '')
 
-            if not tipo_espuma:
-                flash("Informe o tipo de espuma!", "danger")
+                if not tipo_espuma_id:
+                    flash("Informe o tipo de espuma!", "danger")
+                    return redirect(url_for('cadastrar_ficha_tecnica'))
+
+                try:
+                    tipo_espuma_id_int = int(tipo_espuma_id)
+                except ValueError:
+                    flash("Valor inválido para tipo de espuma!", "danger")
+                    return redirect(url_for('cadastrar_ficha_tecnica'))
+
+                # Evita duplicidade
+                if FichaTecnica.query.filter_by(tipo_espuma_id=tipo_espuma_id_int).first():
+                    tipo_nome = TipoEspuma.query.get(tipo_espuma_id_int).nome
+                    flash(f"Já existe uma ficha técnica para '{tipo_nome}'.", "warning")
+                    return redirect(url_for('cadastrar_ficha_tecnica'))
+
+                ficha = FichaTecnica(tipo_espuma_id=tipo_espuma_id_int, descricao=descricao)
+                db.session.add(ficha)
+                db.session.flush()
+
+                for componente in componentes:
+                    if request.form.get(f"componente_{componente.id}"):
+                        db.session.add(
+                            FichaTecnicaComponente(
+                                ficha_tecnica_id=ficha.id,
+                                componente_id=componente.id
+                            )
+                        )
+
+                db.session.commit()
+
+                tipo_nome = TipoEspuma.query.get(tipo_espuma_id_int).nome
+                flash(f"Ficha técnica '{tipo_nome}' criada com sucesso!", "success")
                 return redirect(url_for('mostrar_ficha_tecnica'))
 
-            if FichaTecnica.query.filter_by(tipo_espuma_id=tipo_espuma).first():
-                flash(f"Já existe uma ficha técnica com o tipo de espuma '{tipo_espuma}'.", "warning")
-                return redirect(url_for('mostrar_ficha_tecnica'))
+            # ---------------------
+            #       GET
+            # ---------------------
+            return render_template(
+                "ficha_tecnica/cadastrar.html",
+                componentes=componentes,
+                tipos_espuma=tipos_espuma
+            )
 
-            ficha = FichaTecnica(tipo_espuma_id=tipo_espuma, descricao=descricao)
-            db.session.add(ficha)
-            db.session.flush()
-
-            for componente in componentes:
-                if request.form.get(f"componente_{componente.id}"):
-                    relacao = FichaTecnicaComponente(
-                        ficha_tecnica_id=ficha.id,
-                        componente_id=componente.id
-                    )
-                    db.session.add(relacao)
-
-            db.session.commit()
-            flash(f"Ficha técnica '{tipo_espuma}' criada com sucesso!", "success")
-            return redirect(url_for('mostrar_ficha_tecnica'))
-
-        # 🔹 Se for GET → mostra o formulário com os tipos vindos do banco
-        return redirect(url_for(
-            'controle_producao',
-            componentes=componentes,
-            tipos_espuma=tipos_espuma
-        ))
-
-    
+        
 
     @app.route('/ficha-tecnica/editar/<int:ficha_id>', methods=['GET', 'POST'], endpoint='editar_ficha_tecnica')
     def editar_ficha_tecnica(ficha_id):
-        ficha = FichaTecnica.query.get_or_404(ficha_id)
-        componentes = Componente.query.filter_by(ativo=True).all()
-        tipos_espuma = TipoEspuma.query.all()
+            ficha = FichaTecnica.query.get_or_404(ficha_id)
+            componentes = Componente.query.filter_by(ativo=True).all()
+            tipos_espuma = TipoEspuma.query.all()
 
-        if request.method == 'POST':
-            # Valores enviados pelo formulário
-            tipo_espuma_id = request.form.get('tipo_espuma')
-            descricao = request.form.get('descricao', '')
+            if request.method == 'POST':
+                # Valores enviados pelo formulário
+                tipo_espuma_id = request.form.get('tipo_espuma')
+                descricao = request.form.get('descricao', '')
 
-            if not tipo_espuma_id:
-                flash("Informe o tipo de espuma!", "danger")
-                return redirect(url_for('editar_ficha_tecnica', ficha_id=ficha.id))
+                try:
+                    tipo_espuma_id_int = int(tipo_espuma_id)
+                except ValueError:
+                    flash("Valor inválido para tipo de espuma!", "danger")
+                    return redirect(url_for('editar_ficha_tecnica', ficha_id=ficha.id))
 
-            # Atualiza campos principais
-            ficha.tipo_espuma_id = int(tipo_espuma_id)
-            ficha.descricao = descricao
+                # Atualiza campos principais
+                ficha.tipo_espuma_id = int(tipo_espuma_id)
+                ficha.descricao = descricao
 
-            # Remove relações antigas e recria conforme seleção do formulário
-            FichaTecnicaComponente.query.filter_by(ficha_tecnica_id=ficha.id).delete()
-            for componente in componentes:
-                if request.form.get(f'componente_{componente.id}'):
-                    rel = FichaTecnicaComponente(
-                        ficha_tecnica_id=ficha.id,
-                        componente_id=componente.id
-                    )
-                    db.session.add(rel)
+                # Remove relações antigas e recria conforme seleção do formulário
+                FichaTecnicaComponente.query.filter_by(ficha_tecnica_id=ficha.id).delete()
+                for componente in componentes:
+                    if request.form.get(f'componente_{componente.id}'):
+                        rel = FichaTecnicaComponente(
+                            ficha_tecnica_id=ficha.id,
+                            componente_id=componente.id
+                        )
+                        db.session.add(rel)
 
-            db.session.commit()
-            tipo_nome = TipoEspuma.query.get(ficha.tipo_espuma_id).nome if ficha.tipo_espuma_id else ''
-            flash(f"Ficha técnica '{tipo_nome}' atualizada com sucesso!", "success")
-            return redirect(url_for('mostrar_ficha_tecnica'))
+                db.session.commit()
+                tipo_nome = TipoEspuma.query.get(ficha.tipo_espuma_id).nome if ficha.tipo_espuma_id else ''
+                flash(f"Ficha técnica '{tipo_nome}' atualizada com sucesso!", "success")
+                return redirect(url_for('mostrar_ficha_tecnica'))
 
-        # GET -> prepara dados para o formulário (ids dos componentes já vinculados)
-        ficha_componentes_ids = [c.componente_id for c in ficha.componentes]
+            # GET -> prepara dados para o formulário (ids dos componentes já vinculados)
+            ficha_componentes_ids = [c.componente_id for c in ficha.componentes]
 
-        return render_template(
-            'editarFichaTecnica.html',
-            ficha=ficha,
-            componentes=componentes,
-            tipos_espuma=tipos_espuma,
-            componentes_marcados=ficha_componentes_ids
-        )
+            return render_template(
+                'editarFichaTecnica.html',
+                ficha=ficha,
+                componentes=componentes,
+                tipos_espuma=tipos_espuma,
+                componentes_marcados=ficha_componentes_ids
+            )
 
     @app.route('/tipo-espuma', methods=['GET', 'POST'], endpoint='cadastrar_tipo_espuma')
     def cadastrar_tipo_espuma():
@@ -538,6 +562,34 @@ def routes(app):
 
         espumas = TipoEspuma.query.order_by(TipoEspuma.nome).all()
         return render_template('cadastroTipoEspuma.html', espumas=espumas)
+    
+
+    #--------------------
+    #rota de login
+    #------------------
+    @app.route('/login', methods=['GET', 'POST'])
+    def login():
+        if request.method == 'POST':
+            email = request.form.get('email')
+            senha = request.form.get('senha')
+
+            usuario = Usuario.query.filter_by(email=email, ativo=True).first()
+
+            if usuario and usuario.check_senha(senha):
+                login_user(usuario)
+                return redirect(url_for('index'))
+            else:
+                flash("Usuário ou senha inválidos", "danger")
+                return render_template("login.html")
+
+        return render_template("login.html")
+
+    @app.route('/logout')
+    @login_required
+    def logout():
+        logout_user()
+        flash("Logout realizado com sucesso!", "info")
+        return redirect(url_for('login'))
 
 
 
