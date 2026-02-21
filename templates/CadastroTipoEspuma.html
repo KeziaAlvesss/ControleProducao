@@ -51,49 +51,84 @@
 <body>
 
 <div class="container mt-4">
+    <h3><i class="bi bi-layers"></i> Cadastro de Tipo de Espuma</h3>
 
-    <h3 class="page-title mb-4">
-        <i class="bi bi-layers"></i> Cadastro de Tipo de Espuma
-    </h3>
+    <!-- 🔹 MENSAGENS FLASH -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show mt-3" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
 
-    <div class="card-custom mb-4">
-        <form method="POST">
-            <div class="mb-3">
-                <label class="form-label fw-semibold">Nome do Tipo de Espuma</label>
-                <input type="text" name="nome" class="form-control" placeholder="Ex: D23, D33, Soft..." required>
-            </div>
+    <!-- Formulário de cadastro -->
+    <form method="POST" class="mb-4">
+        <div class="mb-3">
+            <label class="form-label">Nome do Tipo de Espuma</label>
+            <input type="text" name="nome" class="form-control" placeholder="Ex: D23, HR33, Soft..." required>
+        </div>
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Adicionar
+        </button>
+    </form>
 
-            <button type="submit" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> Adicionar
-            </button>
-        </form>
-    </div>
+    <!-- Lista de espumas -->
+    <h5>Tipos de Espuma Cadastrados</h5>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nome</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for e in espumas %}
+            <tr>
+                <td>{{ e.id }}</td>
+                <td>{{ e.nome }}</td>
+                <td>
+                    <!-- Botão de edição -->
+                    <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editarModal{{ e.id }}">
+                        <i class="bi bi-pencil"></i> Editar
+                    </button>
 
-    <div class="card-custom">
-        <h5 class="fw-bold mb-3">Tipos de Espuma Cadastrados</h5>
+                    <!-- Modal de edição -->
+                    <div class="modal fade" id="editarModal{{ e.id }}" tabindex="-1" aria-labelledby="editarModalLabel{{ e.id }}" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <form method="POST" action="{{ url_for('editar_tipo_espuma', id=e.id) }}">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="editarModalLabel{{ e.id }}">Editar Tipo de Espuma</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">Nome</label>
+                                            <input type="text" name="novo_nome" class="form-control" value="{{ e.nome }}" required>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                        <button type="submit" class="btn btn-success">Salvar Alterações</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 
-        <table class="table table-striped align-middle">
-            <thead class="table-primary">
-                <tr>
-                    <th>ID</th>
-                    <th>Nome</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for e in espumas %}
-                <tr>
-                    <td>{{ e.id }}</td>
-                    <td>{{ e.nome }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-        <a href="{{ url_for('mostrar_ficha_tecnica') }}" class="btn btn-secondary mt-3">
-            <i class="bi bi-arrow-left"></i> Voltar
-        </a>
-    </div>
-
+    <a href="{{ url_for('mostrar_ficha_tecnica') }}" class="btn btn-secondary mt-3">
+        <i class="bi bi-arrow-left"></i> Voltar
+    </a>
 </div>
 </body>
 </html>
